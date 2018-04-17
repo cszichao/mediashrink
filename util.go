@@ -1,6 +1,7 @@
 package mediashrink
 
 import (
+	"bufio"
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
@@ -8,6 +9,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"sync"
 )
 
 // ErrHashSum weird error, should it actually occurred?
@@ -67,4 +69,54 @@ func getWidthAndHeightFromBytes(info []byte) (uint32, uint32, error) {
 		return 0, 0, fmt.Errorf("error occurred when convert %s to int:%s", heightStr, err)
 	}
 	return width, height, nil
+}
+
+// fileHeaderHandler handler for the tmp read header from file
+type fileHeaderHandler func(header []byte, err error) error
+
+// maxFileHeaderSize max file header size read into memory
+const maxFileHeaderSize = 64
+
+// readFileHeader read file header (1st 64 bytes) in an efficient and low memory way
+func readFileHeader(filePath string, handler fileHeaderHandler) error {
+	f, err1 := os.Open(filePath)
+	if err1 != nil {
+		return handler(nil, err1)
+	}
+	defer f.Close()
+
+	stat, err2 := f.Stat()
+	if err2 != nil {
+		return handler(nil, err2)
+	}
+
+	reader := acquireFileHeaderReader(f)
+	defer releaseFileHeaderReader(reader)
+
+	sizeToPeek := int64(maxFileHeaderSize)
+	if sizeToPeek > stat.Size() {
+		sizeToPeek = stat.Size()
+	}
+	header, _ := reader.Peek(int(sizeToPeek))
+
+	return handler(header, nil)
+}
+
+// fileHeaderBufioPool file header buffer io pool
+var fileHeaderBufioPool sync.Pool
+
+// acquireFileHeaderReader acquire a buffered reader based on a give reader
+func acquireFileHeaderReader(c io.Reader) *bufio.Reader {
+	v := fileHeaderBufioPool.Get()
+	if v == nil {
+		return bufio.NewReaderSize(c, maxFileHeaderSize)
+	}
+	r := v.(*bufio.Reader)
+	r.Reset(c)
+	return r
+}
+
+// releaseFileHeaderReader release a buffered reader
+func releaseFileHeaderReader(r *bufio.Reader) {
+	fileHeaderBufioPool.Put(r)
 }

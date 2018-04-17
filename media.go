@@ -67,7 +67,7 @@ func GetMediaInfo(sig string, path string) (*MediaInfo, error) {
 	var mediaInfo *MediaInfo
 	var err error
 	if isPNG(ext) { //test image in a more fast and compatible way
-		if mediaInfo, err = GetPNGInfo(path); err != nil {
+		if mediaInfo, err = getImagePNGInfo(path); err != nil {
 			return nil, err
 		} else if mediaInfo.Width <= 0 || mediaInfo.Height <= 0 {
 			return nil, ErrUnknownMediaType
