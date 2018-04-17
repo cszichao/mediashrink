@@ -106,14 +106,21 @@ func GetMediaInfo(sig string, guessMissingExt bool, path string) (*MediaInfo, er
 
 // Shrink makes a shrink media using info
 func (info *MediaInfo) Shrink(outputPath string) error {
+	var err error
+	safeOutputPath := outputPath + "." + info.Ext
 	if isImage(info.Ext) {
-		return info.makeNullImage(outputPath)
+		err = info.makeNullImage(safeOutputPath)
 	} else if isVideo(info.Ext) {
-		return info.makeNullVideo(outputPath)
+		err = info.makeNullVideo(safeOutputPath)
 	} else if isAudio(info.Ext) {
-		return info.makeNullAudio(outputPath)
+		err = info.makeNullAudio(safeOutputPath)
 	}
-
+	if err != nil {
+		return err
+	}
+	if _, err := os.Stat(safeOutputPath); err == nil {
+		return os.Rename(safeOutputPath, outputPath)
+	}
 	return fmt.Errorf("unsupported media format %s", info.ToString())
 }
 
