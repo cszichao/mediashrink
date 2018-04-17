@@ -30,7 +30,7 @@ type MediaInfo struct {
 	Ext       string
 }
 
-//ToString convert MediaInfo To String width[x]height[x]duration[x]signature[.]ext
+// ToString convert MediaInfo To String width[x]height[x]duration[x]signature[.]ext
 func (info *MediaInfo) ToString() string {
 	return fmt.Sprintf("%dx%dx%dx%s.%s", info.Width,
 		info.Height, info.Duration, info.Signature, info.Ext)
@@ -84,8 +84,8 @@ func GetMediaInfo(sig string, path string) (*MediaInfo, error) {
 
 }
 
-// MakeShrinkMMedia makes a shrink media using info
-func (info *MediaInfo) MakeShrinkMMedia(outputPath string) error {
+// Shrink makes a shrink media using info
+func (info *MediaInfo) Shrink(outputPath string) error {
 	if isImage(info.Ext) {
 		return info.makeNullImage(outputPath)
 	} else if isVideo(info.Ext) {
