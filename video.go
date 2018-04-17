@@ -3,6 +3,8 @@ package mediashrink
 import (
 	"fmt"
 	"os/exec"
+	"path/filepath"
+	"strings"
 )
 
 // getVideoInfo get audio and video duration in secs with video dimension as well
@@ -45,11 +47,23 @@ func (vInfo *MediaInfo) makeNullVideo(outputPath string) error {
 	if info, err := exec.Command(
 		commands.FFMPEG.FFMpeg,
 		"-loglevel", "panic",
-		"-f", "lavfi", "-i", "color=#"+vInfo.Signature+":s="+videoDimension+":d="+videoDuration,
-		"-f", "lavfi", "-i", "anullsrc=sample_rate=128000", "-t", audioDuration,
+		"-y", "-f", "lavfi", "-i", "color=#"+vInfo.Signature+":s="+videoDimension+":d="+videoDuration,
+		"-f", "lavfi", "-i", "anullsrc=sample_rate="+getBestVideoSampleRate(outputPath),
+		"-t", audioDuration,
 		outputPath,
 	).CombinedOutput(); err != nil {
 		return fmt.Errorf("exec ffmpeg %s with err: %s, info: %s", outputPath, err, info)
 	}
 	return nil
+}
+
+// getBestVideoSampleRate, use 128k sample rate for best duration approaching
+// mkv, wmv, asf can only get 48k
+func getBestVideoSampleRate(outputPath string) string {
+	ext := filepath.Ext(outputPath)
+	ext = strings.ToLower(ext)
+	if ext == ".wmv" || ext == ".mkv" || ext == ".asf" {
+		return "48000"
+	}
+	return "128000"
 }
