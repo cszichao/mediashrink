@@ -2,6 +2,7 @@ package mediashrink
 
 import (
 	"fmt"
+	"log"
 	"path/filepath"
 	"strconv"
 )
@@ -25,7 +26,7 @@ func isAudio(ext string) bool {
 type MediaInfo struct {
 	Width     uint32
 	Height    uint32
-	Duration  uint32
+	Duration  uint32 // in ms
 	Signature string
 	Ext       string
 }
@@ -36,6 +37,56 @@ func (info *MediaInfo) ToString() string {
 		info.Height, info.Duration, info.Signature, info.Ext)
 }
 
+// CheckCompatibility check compatibility of ImageMagicK and FFMpeg
+func CheckCompatibility(exportDir string) {
+	mediaList := map[string]*MediaInfo{}
+	duration := 5000
+	for imgExt := range image {
+		infoStr := "32x32x0x123456." + imgExt
+		if i, err := MediaInfoFromString(infoStr); err != nil {
+			log.Fatalf("failed to parse media info %s with error %s", infoStr, err)
+		} else {
+			mediaList[imgExt] = i
+		}
+	}
+	for audioExt := range audio {
+		infoStr := "0x0x" + strconv.Itoa(duration) + "x123456." + audioExt
+		if a, err := MediaInfoFromString(infoStr); err != nil {
+			log.Fatalf("failed to parse media info %s with error %s", infoStr, err)
+		} else {
+			mediaList[audioExt] = a
+		}
+	}
+	for videoExt := range video {
+		infoStr := "128x128x" + strconv.Itoa(duration) + "x123456." + videoExt
+		if v, err := MediaInfoFromString(infoStr); err != nil {
+			log.Fatalf("%s", err)
+		} else {
+			mediaList[videoExt] = v
+		}
+	}
+
+	for ext, media := range mediaList {
+		sample := filepath.Join(exportDir, "shrink."+ext)
+		fmt.Printf("generating %s to %s : ", ext, sample)
+		if err := media.Shrink(sample); err != nil {
+			fmt.Printf("Failed with error %s\n", err)
+		} else {
+			fmt.Println("OKay")
+			fmt.Printf("reading %s from %s : ", ext, sample)
+			if info, err := GetMediaInfo("", sample); err != nil {
+				fmt.Printf("Failed with error %s\n", err)
+			} else {
+				durationMargin := 0
+				if info.Duration > 0 {
+					durationMargin = int(info.Duration) - duration
+				}
+				fmt.Println("Okay:", info.ToString(), "duration margin: ", durationMargin, "ms")
+			}
+		}
+	}
+}
+
 // GetMediaInfo return the MediaInfo if path is a valid media, otherwise return null.
 // sig: hex string in min length of 6, should be a MD5 string normally,
 func GetMediaInfo(sig string, path string) (*MediaInfo, error) {
@@ -43,6 +94,7 @@ func GetMediaInfo(sig string, path string) (*MediaInfo, error) {
 	if len(ext) <= 1 {
 		return nil, ErrUnknownMediaType
 	}
+	ext = ext[1:]
 
 	if len(sig) == 0 {
 		if md5, err := fileMD5(path); err == nil {
@@ -81,7 +133,6 @@ func GetMediaInfo(sig string, path string) (*MediaInfo, error) {
 	mediaInfo.Ext = ext
 	mediaInfo.Signature = signature
 	return mediaInfo, nil
-
 }
 
 // Shrink makes a shrink media using info
