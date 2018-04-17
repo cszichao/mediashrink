@@ -25,8 +25,9 @@ func (aInfo *MediaInfo) makeNullAudio(outputPath string) error {
 	if info, err := exec.Command(
 		commands.FFMPEG.FFMpeg,
 		"-loglevel", "panic",
-		"-f", "lavfi", "-i", "anullsrc=sample_rate=128000", "-t",
-		"-metadata", "title=\""+aInfo.Signature+"\"", audioDuration,
+		"-y", "-f", "lavfi", "-i", "anullsrc=sample_rate=128000",
+		"-t", audioDuration,
+		"-metadata", "title=\""+aInfo.Signature+"\"",
 		outputPath,
 	).CombinedOutput(); err != nil {
 		return fmt.Errorf("exec ffmpeg %s with err: %s, info: %s", outputPath, err, info)
