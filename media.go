@@ -2,7 +2,7 @@ package mediashrink
 
 import (
 	"fmt"
-	"log"
+	"io"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -10,6 +10,11 @@ import (
 
 func isImage(ext string) bool {
 	_, exists := image[ext]
+	return exists
+}
+
+func isPNG(ext string) bool {
+	_, exists := imagePNG[ext]
 	return exists
 }
 
@@ -38,56 +43,6 @@ func (info *MediaInfo) ToString() string {
 		info.Height, info.Duration, info.Signature, info.Ext)
 }
 
-// CheckCompatibility check compatibility of ImageMagicK and FFMpeg
-func CheckCompatibility(exportDir string) {
-	mediaList := map[string]*MediaInfo{}
-	duration := 5000
-	for imgExt := range image {
-		infoStr := "32x32x0x123456." + imgExt
-		if i, err := MediaInfoFromString(infoStr); err != nil {
-			log.Fatalf("failed to parse media info %s with error %s", infoStr, err)
-		} else {
-			mediaList[imgExt] = i
-		}
-	}
-	for audioExt := range audio {
-		infoStr := "0x0x" + strconv.Itoa(duration) + "x123456." + audioExt
-		if a, err := MediaInfoFromString(infoStr); err != nil {
-			log.Fatalf("failed to parse media info %s with error %s", infoStr, err)
-		} else {
-			mediaList[audioExt] = a
-		}
-	}
-	for videoExt := range video {
-		infoStr := "128x128x" + strconv.Itoa(duration) + "x123456." + videoExt
-		if v, err := MediaInfoFromString(infoStr); err != nil {
-			log.Fatalf("%s", err)
-		} else {
-			mediaList[videoExt] = v
-		}
-	}
-
-	for ext, media := range mediaList {
-		sample := filepath.Join(exportDir, "shrink."+ext)
-		fmt.Printf("generating %s to %s : ", ext, sample)
-		if err := media.Shrink(sample); err != nil {
-			fmt.Printf("Failed with error %s\n", err)
-		} else {
-			fmt.Println("OKay")
-			fmt.Printf("reading %s from %s : ", ext, sample)
-			if info, err := GetMediaInfo("", sample); err != nil {
-				fmt.Printf("Failed with error %s\n", err)
-			} else {
-				durationMargin := 0
-				if info.Duration > 0 {
-					durationMargin = int(info.Duration) - duration
-				}
-				fmt.Println("Okay:", info.ToString(), "duration margin: ", durationMargin, "ms")
-			}
-		}
-	}
-}
-
 // GetMediaInfo return the MediaInfo if path is a valid media, otherwise return null.
 // sig: hex string in min length of 6, should be a MD5 string normally,
 func GetMediaInfo(sig string, path string) (*MediaInfo, error) {
@@ -111,7 +66,13 @@ func GetMediaInfo(sig string, path string) (*MediaInfo, error) {
 
 	var mediaInfo *MediaInfo
 	var err error
-	if isImage(ext) {
+	if isPNG(ext) { //test image in a more fast and compatible way
+		if mediaInfo, err = GetPNGInfo(path); err != nil {
+			return nil, err
+		} else if mediaInfo.Width <= 0 || mediaInfo.Height <= 0 {
+			return nil, ErrUnknownMediaType
+		}
+	} else if isImage(ext) {
 		if mediaInfo, err = getImageInfo(path); err != nil {
 			return nil, err
 		} else if mediaInfo.Width <= 0 || mediaInfo.Height <= 0 {
@@ -147,7 +108,7 @@ func (info *MediaInfo) Shrink(outputPath string) error {
 		return info.makeNullAudio(outputPath)
 	}
 
-	return fmt.Errorf("making a unsupported format %s", info.ToString())
+	return fmt.Errorf("unsupported media format %s", info.ToString())
 }
 
 func validateSignature(s string) string {
@@ -232,4 +193,57 @@ func MediaInfoFromString(str string) (*MediaInfo, error) {
 	// ext
 	info.Ext = str[extIndex+1:]
 	return info, nil
+}
+
+// CheckCompatibility check compatibility of ImageMagicK and FFMpeg
+func CheckCompatibility(output io.Writer, exportDir string) {
+	mediaList := map[string]*MediaInfo{}
+	duration := 5000
+	for imgExt := range image {
+		infoStr := "32x32x0x123456." + imgExt
+		if i, err := MediaInfoFromString(infoStr); err == nil {
+			mediaList[imgExt] = i
+		} else {
+			fmt.Fprintf(output, "failed to parse media info %s with error %s", infoStr, err)
+			return
+		}
+	}
+	for audioExt := range audio {
+		infoStr := "0x0x" + strconv.Itoa(duration) + "x123456." + audioExt
+		if a, err := MediaInfoFromString(infoStr); err == nil {
+			mediaList[audioExt] = a
+		} else {
+			fmt.Fprintf(output, "failed to parse media info %s with error %s", infoStr, err)
+			return
+		}
+	}
+	for videoExt := range video {
+		infoStr := "128x128x" + strconv.Itoa(duration) + "x123456." + videoExt
+		if v, err := MediaInfoFromString(infoStr); err == nil {
+			mediaList[videoExt] = v
+		} else {
+			fmt.Fprintf(output, "failed to parse media info %s with error %s", infoStr, err)
+			return
+		}
+	}
+
+	for ext, media := range mediaList {
+		sample := filepath.Join(exportDir, "shrink."+ext)
+		fmt.Fprintf(output, "generating %s to %s : ", ext, sample)
+		if err := media.Shrink(sample); err != nil {
+			fmt.Fprintf(output, "Failed with error %s\n", err)
+		} else {
+			fmt.Fprintf(output, "OKay\n")
+			fmt.Fprintf(output, "reading %s from %s : ", ext, sample)
+			if info, err := GetMediaInfo("", sample); err != nil {
+				fmt.Fprintf(output, "Failed with error %s\n", err)
+			} else {
+				durationMargin := 0
+				if info.Duration > 0 {
+					durationMargin = int(info.Duration) - duration
+				}
+				fmt.Fprintln(output, "Okay:", info.ToString(), "duration margin: ", durationMargin, "ms")
+			}
+		}
+	}
 }

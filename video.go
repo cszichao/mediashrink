@@ -46,7 +46,7 @@ func (vInfo *MediaInfo) makeNullVideo(outputPath string) error {
 
 	if info, err := exec.Command(
 		commands.FFMPEG.FFMpeg,
-		"-loglevel", "panic",
+		"-loglevel", "fatal",
 		"-y", "-f", "lavfi", "-i", "color=#"+vInfo.Signature+":s="+videoDimension+":d="+videoDuration,
 		"-f", "lavfi", "-i", "anullsrc=sample_rate="+getBestVideoSampleRate(outputPath),
 		"-t", audioDuration,
@@ -60,8 +60,7 @@ func (vInfo *MediaInfo) makeNullVideo(outputPath string) error {
 // getBestVideoSampleRate, use 128k sample rate for best duration approaching
 // mkv, wmv, asf can only get 48k
 func getBestVideoSampleRate(outputPath string) string {
-	ext := filepath.Ext(outputPath)
-	ext = strings.ToLower(ext)
+	ext := strings.ToLower(filepath.Ext(outputPath))
 	if ext == ".wmv" || ext == ".mkv" || ext == ".asf" {
 		return "48000"
 	}

@@ -20,6 +20,8 @@ var (
 		matchers.TypeBmp.Extension:  matchers.TypeBmp,
 		matchers.TypeIco.Extension:  matchers.TypeIco,
 	}
+	imagePNG = map[string]types.Type{matchers.TypePng.Extension: matchers.TypePng}
+
 	audio = map[string]types.Type{
 		matchers.TypeMp3.Extension:  matchers.TypeMp3,
 		matchers.TypeM4a.Extension:  matchers.TypeM4a,
@@ -30,6 +32,7 @@ var (
 		matchers.TypeWma.Extension:  matchers.TypeWma,
 		matchers.TypeCaf.Extension:  matchers.TypeCaf,
 	}
+
 	video = map[string]types.Type{
 		matchers.TypeMp4.Extension:  matchers.TypeMp4,
 		matchers.TypeM4v.Extension:  matchers.TypeM4v,
