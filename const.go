@@ -19,7 +19,6 @@ var (
 		matchers.TypeTiff.Extension: matchers.TypeTiff,
 		matchers.TypeBmp.Extension:  matchers.TypeBmp,
 		matchers.TypeIco.Extension:  matchers.TypeIco,
-		matchers.TypeJfif.Extension: matchers.TypeJfif,
 	}
 	audio = map[string]types.Type{
 		matchers.TypeMp3.Extension:  matchers.TypeMp3,
