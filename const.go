@@ -4,46 +4,45 @@ import (
 	"errors"
 
 	"github.com/haxii/filetype/matchers"
-	"github.com/haxii/filetype/types"
 )
 
 // support media types
 var (
-	image = map[string]types.Type{
-		matchers.TypeJpeg.Extension: matchers.TypeJpeg,
-		matchers.TypeJpe.Extension:  matchers.TypeJpe,
-		matchers.TypeJpg.Extension:  matchers.TypeJpg,
-		matchers.TypePng.Extension:  matchers.TypePng,
-		matchers.TypeGif.Extension:  matchers.TypeGif,
-		matchers.TypeTif.Extension:  matchers.TypeTif,
-		matchers.TypeTiff.Extension: matchers.TypeTiff,
-		matchers.TypeBmp.Extension:  matchers.TypeBmp,
-		matchers.TypeIco.Extension:  matchers.TypeIco,
+	image = map[string]matchers.Matcher{
+		matchers.TypeJpeg.Extension: matchers.Jpeg,
+		matchers.TypeJpe.Extension:  matchers.Jpe,
+		matchers.TypeJpg.Extension:  matchers.Jpg,
+		matchers.TypePng.Extension:  matchers.Png,
+		matchers.TypeGif.Extension:  matchers.Gif,
+		matchers.TypeTif.Extension:  matchers.Tif,
+		matchers.TypeTiff.Extension: matchers.Tiff,
+		matchers.TypeBmp.Extension:  matchers.Bmp,
+		matchers.TypeIco.Extension:  matchers.Ico,
 	}
-	imagePNG = map[string]types.Type{matchers.TypePng.Extension: matchers.TypePng}
+	imagePNG = map[string]matchers.Matcher{matchers.TypePng.Extension: matchers.Png}
 
-	audio = map[string]types.Type{
-		matchers.TypeMp3.Extension:  matchers.TypeMp3,
-		matchers.TypeM4a.Extension:  matchers.TypeM4a,
-		matchers.TypeOgg.Extension:  matchers.TypeOgg,
-		matchers.TypeFlac.Extension: matchers.TypeFlac,
-		matchers.TypeWav.Extension:  matchers.TypeWav,
-		matchers.TypeAac.Extension:  matchers.TypeAac,
-		matchers.TypeWma.Extension:  matchers.TypeWma,
-		matchers.TypeCaf.Extension:  matchers.TypeCaf,
+	audio = map[string]matchers.Matcher{
+		matchers.TypeMp3.Extension:  matchers.Mp3,
+		matchers.TypeM4a.Extension:  matchers.M4a,
+		matchers.TypeOgg.Extension:  matchers.Ogg,
+		matchers.TypeFlac.Extension: matchers.Flac,
+		matchers.TypeWav.Extension:  matchers.Wav,
+		matchers.TypeAac.Extension:  matchers.Aac,
+		matchers.TypeWma.Extension:  matchers.Wma,
+		matchers.TypeCaf.Extension:  matchers.Caf,
 	}
 
-	video = map[string]types.Type{
-		matchers.TypeMp4.Extension:  matchers.TypeMp4,
-		matchers.TypeM4v.Extension:  matchers.TypeM4v,
-		matchers.TypeMkv.Extension:  matchers.TypeMkv,
-		matchers.TypeMov.Extension:  matchers.TypeMov,
-		matchers.TypeAvi.Extension:  matchers.TypeAvi,
-		matchers.TypeWmv.Extension:  matchers.TypeWmv,
-		matchers.TypeMpeg.Extension: matchers.TypeMpeg,
-		matchers.TypeMpg.Extension:  matchers.TypeMpg,
-		matchers.TypeFlv.Extension:  matchers.TypeFlv,
-		matchers.TypeAsf.Extension:  matchers.TypeAsf,
+	video = map[string]matchers.Matcher{
+		matchers.TypeMp4.Extension:  matchers.Mp4,
+		matchers.TypeM4v.Extension:  matchers.M4v,
+		matchers.TypeMkv.Extension:  matchers.Mkv,
+		matchers.TypeMov.Extension:  matchers.Mov,
+		matchers.TypeAvi.Extension:  matchers.Avi,
+		matchers.TypeWmv.Extension:  matchers.Wmv,
+		matchers.TypeMpeg.Extension: matchers.Mpeg,
+		matchers.TypeMpg.Extension:  matchers.Mpeg,
+		matchers.TypeFlv.Extension:  matchers.Flv,
+		matchers.TypeAsf.Extension:  matchers.Asf,
 	}
 )
 

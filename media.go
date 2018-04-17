@@ -3,6 +3,7 @@ package mediashrink
 import (
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -45,12 +46,17 @@ func (info *MediaInfo) ToString() string {
 
 // GetMediaInfo return the MediaInfo if path is a valid media, otherwise return null.
 // sig: hex string in min length of 6, should be a MD5 string normally,
-func GetMediaInfo(sig string, path string) (*MediaInfo, error) {
+// set guessMissingExt to true to guess the media type when no ext presented in path.
+func GetMediaInfo(sig string, guessMissingExt bool, path string) (*MediaInfo, error) {
 	ext := filepath.Ext(path)
-	if len(ext) <= 1 {
+	if len(ext) > 1 {
+		ext = strings.ToLower(ext[1:])
+	} else if guessMissingExt {
+		ext = guessExt(path)
+	}
+	if len(ext) == 0 {
 		return nil, ErrUnknownMediaType
 	}
-	ext = strings.ToLower(ext[1:])
 
 	if len(sig) == 0 {
 		if md5, err := fileMD5(path); err == nil {
@@ -121,6 +127,42 @@ func validateSignature(s string) string {
 		}
 	}
 	return s[:6]
+}
+
+// guessExt guess if file is a supported media, if so return the ext, otherwise nil string
+func guessExt(filePath string) string {
+	guessedExt := ""
+	if err := readFileHeader(filePath, func(header []byte, err error) error {
+		if err != nil {
+			return err
+		}
+		for ext, matcher := range image {
+			if matcher(header) {
+				guessedExt = ext
+				return nil
+			}
+		}
+		for ext, matcher := range video {
+			if matcher(header) {
+				guessedExt = ext
+				return nil
+			}
+		}
+		for ext, matcher := range audio {
+			if matcher(header) {
+				guessedExt = ext
+				return nil
+			}
+		}
+		return nil
+	}); err != nil {
+		return ""
+	}
+	// uniform the jpg extensions
+	if guessedExt == "jpe" || guessedExt == "jpeg" {
+		guessedExt = "jpg"
+	}
+	return guessedExt
 }
 
 // MediaInfoFromString convert String width[x]height[x]duration[[x]signature[.]ext To MediaInfo
@@ -234,8 +276,9 @@ func CheckCompatibility(output io.Writer, exportDir string) {
 			fmt.Fprintf(output, "Failed with error %s\n", err)
 		} else {
 			fmt.Fprintf(output, "OKay\n")
-			fmt.Fprintf(output, "reading %s from %s : ", ext, sample)
-			if info, err := GetMediaInfo("", sample); err != nil {
+			fmt.Fprintln(output, "guessing ext of ", sample, ":", guessExt(sample))
+			fmt.Fprintf(output, "reading %s from %s :", ext, sample)
+			if info, err := GetMediaInfo("", false, sample); err != nil {
 				fmt.Fprintf(output, "Failed with error %s\n", err)
 			} else {
 				durationMargin := 0
@@ -245,5 +288,6 @@ func CheckCompatibility(output io.Writer, exportDir string) {
 				fmt.Fprintln(output, "Okay:", info.ToString(), "duration margin: ", durationMargin, "ms")
 			}
 		}
+		os.Remove(sample)
 	}
 }
