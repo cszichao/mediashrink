@@ -5,6 +5,7 @@ import (
 	"log"
 	"path/filepath"
 	"strconv"
+	"strings"
 )
 
 func isImage(ext string) bool {
@@ -94,7 +95,7 @@ func GetMediaInfo(sig string, path string) (*MediaInfo, error) {
 	if len(ext) <= 1 {
 		return nil, ErrUnknownMediaType
 	}
-	ext = ext[1:]
+	ext = strings.ToLower(ext[1:])
 
 	if len(sig) == 0 {
 		if md5, err := fileMD5(path); err == nil {
@@ -115,7 +116,6 @@ func GetMediaInfo(sig string, path string) (*MediaInfo, error) {
 			return nil, err
 		} else if mediaInfo.Width <= 0 || mediaInfo.Height <= 0 {
 			return nil, ErrUnknownMediaType
-
 		}
 	} else if isVideo(ext) {
 		if mediaInfo, err = getVideoInfo(path); err != nil {
@@ -129,6 +129,8 @@ func GetMediaInfo(sig string, path string) (*MediaInfo, error) {
 		} else if mediaInfo.Duration <= 0 {
 			return nil, ErrUnknownMediaType
 		}
+	} else {
+		return nil, ErrUnknownMediaType
 	}
 	mediaInfo.Ext = ext
 	mediaInfo.Signature = signature
