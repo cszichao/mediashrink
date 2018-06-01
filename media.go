@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/haxii/filetype/matchers"
 )
 
 func isImage(ext string) bool {
@@ -297,4 +299,19 @@ func CheckCompatibility(output io.Writer, exportDir string) {
 		}
 		os.Remove(sample)
 	}
+}
+
+// ImageMatchers image matchers
+func ImageMatchers() map[string]matchers.Matcher {
+	return image
+}
+
+// AudioMatchers audio matchers
+func AudioMatchers() map[string]matchers.Matcher {
+	return audio
+}
+
+// VideoMatchers video matchers
+func VideoMatchers() map[string]matchers.Matcher {
+	return video
 }
